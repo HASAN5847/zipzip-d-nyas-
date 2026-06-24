@@ -1,353 +1,194 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZıpZıp Dünyası - FPS Sonsuz Şehir</title>
-    <style>
-        html, body { 
-            margin: 0; 
-            overflow: hidden; 
-            background: #000; 
-            font-family: sans-serif; 
-            color: #fff; 
-            user-select: none; 
-            touch-action: none; 
-            width: 100%;
-            height: 100%;
-        }
-        #startScreen { position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center; }
-        #startScreen h1 { font-size: 65px; font-weight: 900; color: #2ed573; margin: 0; text-shadow: 0 0 25px rgba(46,213,115,0.9); letter-spacing: 5px; }
-        #startScreen p { font-size: 20px; color: #a4b0be; letter-spacing: 2px; margin-top: 10px; margin-bottom: 30px; }
-        .btn { padding: 20px 60px; font-size: 26px; background: #ff4757; border: none; color: white; border-radius: 40px; cursor: pointer; font-weight: bold; box-shadow: 0 8px 25px rgba(255,71,87,0.7); }
-        #ui { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 40px; z-index: 5; background: rgba(0,0,0,0.7); padding: 10px 30px; border-radius: 20px; pointer-events: none; display: none; border: 2px solid #2ed573; }
-        .stat { font-size: 24px; font-weight: bold; letter-spacing: 1px; color: #2ed573; text-shadow: 0 0 10px rgba(46,213,115,0.5); }
-        
-        /* DEVASA KONTROLLER */
-        #joystickZone { position: absolute; bottom: 40px; left: 40px; width: 220px; height: 220px; background: rgba(255,255,255,0.15); border: 4px solid rgba(255,255,255,0.5); border-radius: 50%; z-index: 8; display: none; touch-action: none; }
-        #joystick { position: absolute; width: 90px; height: 90px; background: rgba(255,255,255,0.8); border-radius: 50%; top: 65px; left: 65px; }
-        #jumpBtn { position: absolute; bottom: 40px; right: 40px; width: 180px; height: 180px; background: rgba(46,213,115,0.95); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 32px; z-index: 8; box-shadow: 0 8px 30px rgba(46,213,115,0.8); display: none; touch-action: none; -webkit-user-select: none; }
-    </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<meta charset="UTF-8">
+<title>Grafiti Kaçışı</title>
+<style>
+body{
+margin:0;
+overflow:hidden;
+background:#222;
+}
+#game{
+background:#444;
+display:block;
+margin:auto;
+}
+#score{
+position:absolute;
+top:10px;
+left:10px;
+color:white;
+font-size:24px;
+font-family:Arial;
+}
+</style>
 </head>
 <body>
-    <div id="startScreen">
-        <h1>ZIPZIP DÜNYASI</h1>
-        <p>SONSUZ ŞEHİR MODU (AYDINLIK)</p>
-        <button class="btn" onclick="startGame()">ŞEHRE GİR</button>
-    </div>
-    <div id="ui"><div class="stat">SKOR: <span id="score">0</span></div></div>
-    <div id="joystickZone"><div id="joystick"></div></div>
-    <div id="jumpBtn">ZIPLA</div>
 
-    <script>
-        let scene, camera, renderer, player, moveJoystick = {x:0, y:0}, yVelocity = 0;
-        let blocks = [], score = 0, lastSpawnZ = 0;
-        const gravity = -0.011; 
-        const jumpForce = 0.32; 
-        let joyStartX = 0, joyStartY = 0, joyActive = false;
-        
-        let menuCubes = [], gameStarted = false;
-        let menuScene, menuCamera;
+<div id="score">Skor: 0</div>
 
-        // Yakınlaştırmayı tamamen engelleme
-        document.addEventListener('touchstart', function (event) {
-            if (event.touches.length > 1) {
-                event.preventDefault();
-            }
-        }, { passive: false });
+<canvas id="game" width="400" height="700"></canvas>
 
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', function (event) {
-            let now = (new Date()).getTime();
-            if (now - lastTouchEnd <= 300) {
-                event.preventDefault();
-            }
-            lastTouchEnd = now;
-        }, false);
+<script>
 
-        function initMenuAnimation() {
-            menuScene = new THREE.Scene();
-            menuCamera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-            menuCamera.position.z = 15;
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.body.appendChild(renderer.domElement);
+let lane = 1;
+let score = 0;
+let gameOver = false;
 
-            const light = new THREE.DirectionalLight(0xffffff, 1.5);
-            light.position.set(5, 5, 10);
-            menuScene.add(light);
-            menuScene.add(new THREE.AmbientLight(0x112211));
+const lanes = [80, 200, 320];
 
-            animateMenu();
-        }
+const player = {
+x: lanes[1],
+y: 580,
+w: 40,
+h: 60,
+vy: 0,
+jumping:false
+};
 
-        function spawnMenuCube() {
-            if (gameStarted || menuCubes.length > 10) return;
-            const geo = new THREE.BoxGeometry(0.6, 0.6, 0.6);
-            const mat = new THREE.MeshPhongMaterial({ color: 0x2ed573, emissive: 0x10b981, shininess: 100 });
-            const cube = new THREE.Mesh(geo, mat);
-            cube.position.set((Math.random() - 0.5) * 20, -8, (Math.random() - 0.5) * 10);
-            cube.speedY = 0.08 + Math.random() * 0.06;
-            cube.rotSpeed = (Math.random() - 0.5) * 0.05;
-            cube.trails = [];
-            menuScene.add(cube);
-            menuCubes.push(cube);
-        }
+const police = {
+x: lanes[1],
+y: 650,
+w: 40,
+h: 50
+};
 
-        function animateMenu() {
-            if (gameStarted) return;
-            requestAnimationFrame(animateMenu);
+let obstacles = [];
 
-            if (Math.random() < 0.1) spawnMenuCube();
+function spawnObstacle(){
+obstacles.push({
+lane: Math.floor(Math.random()*3),
+y: -100,
+w: 50,
+h: 80
+});
+}
 
-            for (let i = menuCubes.length - 1; i >= 0; i--) {
-                let c = menuCubes[i];
-                c.position.y += c.speedY;
-                c.rotation.x += c.rotSpeed;
-                c.rotation.y += c.rotSpeed;
+setInterval(()=>{
+if(!gameOver) spawnObstacle();
+},1000);
 
-                if (Math.random() < 0.3) {
-                    const trailGeo = new THREE.BoxGeometry(c.scale.x * 0.5, c.scale.y * 0.5, c.scale.z * 0.5);
-                    const trailMat = new THREE.MeshBasicMaterial({ color: 0x2ed573, transparent: true, opacity: 0.3 });
-                    const tMesh = new THREE.Mesh(trailGeo, trailMat);
-                    tMesh.position.copy(c.position);
-                    menuScene.add(tMesh);
-                    c.trails.push(tMesh);
-                }
+document.addEventListener("keydown",(e)=>{
 
-                for (let j = c.trails.length - 1; j >= 0; j--) {
-                    let t = c.trails[j];
-                    t.scale.multiplyScalar(0.92);
-                    t.material.opacity -= 0.03;
-                    if (t.material.opacity <= 0) {
-                        menuScene.remove(t);
-                        c.trails.splice(j, 1);
-                    }
-                }
+if(e.key==="ArrowLeft"){
+lane=Math.max(0,lane-1);
+}
 
-                if (c.position.y > 10) {
-                    c.trails.forEach(t => menuScene.remove(t));
-                    menuScene.remove(c);
-                    menuCubes.splice(i, 1);
-                }
-            }
-            renderer.render(menuScene, menuCamera);
-        }
+if(e.key==="ArrowRight"){
+lane=Math.min(2,lane+1);
+}
 
-        function initGame() {
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x060913); 
-            scene.fog = new THREE.FogExp2(0x060913, 0.01); 
+if(e.key==="ArrowUp" && !player.jumping){
+player.vy=-15;
+player.jumping=true;
+}
 
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+});
 
-            const sunLight = new THREE.DirectionalLight(0xffffff, 2.0);
-            sunLight.position.set(30, 80, 40);
-            scene.add(sunLight);
-            
-            const ambientLight = new THREE.AmbientLight(0xffffff, 1.5); 
-            scene.add(ambientLight);
+function update(){
 
-            const hemisphereLight = new THREE.HemisphereLight(0x4444ff, 0x111111, 1.2);
-            scene.add(hemisphereLight);
+if(gameOver) return;
 
-            player = new THREE.Group();
-            player.position.set(0, 26, 0); 
-            scene.add(player);
-            player.add(camera);
+score++;
 
-            // Başlangıç binası - Tam üstünde başlıyoruz
-            createBuilding(0, 0, 0, 16, 50, 25, 0x4b5563, true); 
-            lastSpawnZ = -15;
+document.getElementById("score").innerText =
+"Skor: "+score;
 
-            // Binaları hemen oyuncunun önüne yerleştiriyoruz ki şehir direkt görünsün
-            for(let i=0; i<25; i++) {
-                generateNextBuildings();
-            }
+player.x = lanes[lane];
 
-            setupControls();
-            animateGame();
-        }
+player.vy += 0.8;
+player.y += player.vy;
 
-        function createBuilding(x, y, z, w, h, d, color, isBase = false) {
-            const geo = new THREE.BoxGeometry(w, h, d);
-            const mat = new THREE.MeshPhongMaterial({ 
-                color: color, 
-                shininess: 40,
-                flatShading: false
-            });
-            const mesh = new THREE.Mesh(geo, mat);
-            mesh.position.set(x, y, z);
-            scene.add(mesh);
-            blocks.push(mesh);
+if(player.y>580){
+player.y=580;
+player.vy=0;
+player.jumping=false;
+}
 
-            // Parlak Aydınlık Neon Pencereler
-            const windowGeo = new THREE.BoxGeometry(0.6, 1.0, 0.1); 
-            const neonColors = [0x00ff7f, 0xff007f, 0x00bfff, 0xffd700, 0xff00ff];
-            
-            for(let pz = z - d/2 + 2; pz < z + d/2 - 2; pz += 4) {
-                for(let py = y - h/2 + 6; py < y + h/2 - 4; py += 5) {
-                    if(Math.random() > 0.3) {
-                        const winColor = neonColors[Math.floor(Math.random() * neonColors.length)];
-                        const windowMat = new THREE.MeshBasicMaterial({ color: winColor });
-                        
-                        const winRight = new THREE.Mesh(windowGeo, windowMat);
-                        winRight.position.set(x + w/2 + 0.08, py, pz);
-                        winRight.rotation.y = Math.PI / 2;
-                        scene.add(winRight);
-                        mesh.add(winRight);
+for(let o of obstacles){
 
-                        const winLeft = new THREE.Mesh(windowGeo, windowMat);
-                        winLeft.position.set(x - w/2 - 0.08, py, pz);
-                        winLeft.rotation.y = -Math.PI / 2;
-                        scene.add(winLeft);
-                        mesh.add(winLeft);
-                    }
-                }
-            }
+o.y += 8;
 
-            mesh.topY = y + h/2;
-            mesh.w = w;
-            mesh.d = d;
-        }
+if(
+player.x-player.w/2 < lanes[o.lane]+o.w/2 &&
+player.x+player.w/2 > lanes[o.lane]-o.w/2 &&
+player.y < o.y+o.h &&
+player.y+player.h > o.y
+){
+gameOver=true;
+alert("Polis seni yakaladı! Skor: "+score);
+}
 
-        function generateNextBuildings() {
-            let zPos = lastSpawnZ - 22;
-            let w = 10 + Math.random() * 6;
-            let h = 40 + Math.random() * 30; 
-            let d = 12 + Math.random() * 8;
-            let xPos = (Math.random() - 0.5) * 12; 
-            
-            const buildingColors = [0x64748b, 0x475569, 0x334155, 0x1e293b];
-            let color = buildingColors[Math.floor(Math.random() * buildingColors.length)];
+}
 
-            // Ana bina yerleşimi
-            createBuilding(xPos, h/2, zPos, w, h, d, color);
-            
-            // Aralara basılabilecek parlak yeşil çatı yolları
-            if(Math.random() > 0.2) {
-                createBuilding((Math.random() - 0.5) * 6, 20, zPos - 4, 6, 40, 6, 0x00ff7f);
-            }
+obstacles = obstacles.filter(o=>o.y<800);
 
-            lastSpawnZ = zPos;
-        }
+}
 
-        function setupControls() {
-            const jZone = document.getElementById('joystickZone');
-            const joy = document.getElementById('joystick');
+function draw(){
 
-            jZone.addEventListener('touchstart', e => {
-                e.preventDefault();
-                joyActive = true;
-                joyStartX = e.touches[0].clientX;
-                joyStartY = e.touches[0].clientY;
-            }, { passive: false });
+ctx.clearRect(0,0,400,700);
 
-            jZone.addEventListener('touchmove', e => {
-                e.preventDefault();
-                if(!joyActive) return;
-                let dx = e.touches[0].clientX - joyStartX;
-                let dy = e.touches[0].clientY - joyStartY;
-                let dist = Math.min(Math.sqrt(dx*dx + dy*dy), 65);
-                let angle = Math.atan2(dy, dx);
-                
-                let mx = Math.cos(angle) * dist;
-                let my = Math.sin(angle) * dist;
-                
-                joy.style.transform = `translate(${mx}px, ${my}px)`;
-                moveJoystick.x = mx / 65;
-                moveJoystick.y = my / 65;
-            }, { passive: false });
+ctx.fillStyle="#555";
+ctx.fillRect(50,0,300,700);
 
-            jZone.addEventListener('touchend', e => {
-                e.preventDefault();
-                joyActive = false;
-                joy.style.transform = 'translate(0px, 0px)';
-                moveJoystick = {x:0, y:0};
-            });
+ctx.strokeStyle="white";
 
-            // KESİN SINIRSIZ HAVADA ZIPLAMA MEKANİZMASI
-            const jBtn = document.getElementById('jumpBtn');
-            jBtn.addEventListener('touchstart', e => {
-                e.preventDefault();
-                yVelocity = jumpForce; // Havada her basıldığında hızı yukarı doğru yeniler
-            }, { passive: false });
+ctx.beginPath();
+ctx.moveTo(150,0);
+ctx.lineTo(150,700);
+ctx.stroke();
 
-            let touchStartX = 0, touchStartY = 0;
-            window.addEventListener('touchstart', e => {
-                if(e.target.id === 'joystickZone' || e.target.id === 'joystick' || e.target.id === 'jumpBtn') return;
-                touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY;
-            });
+ctx.beginPath();
+ctx.moveTo(250,0);
+ctx.lineTo(250,700);
+ctx.stroke();
 
-            window.addEventListener('touchmove', e => {
-                if(e.target.id === 'joystickZone' || e.target.id === 'joystick' || e.target.id === 'jumpBtn') return;
-                let dx = e.touches[0].clientX - touchStartX;
-                let dy = e.touches[0].clientY - touchStartY;
-                player.rotation.y -= dx * 0.006;
-                touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY;
-            });
-        }
+ctx.fillStyle="blue";
+ctx.fillRect(
+player.x-20,
+player.y,
+player.w,
+player.h
+);
 
-        function animateGame() {
-            if (!gameStarted) return;
-            requestAnimationFrame(animateGame);
+ctx.fillStyle="green";
+ctx.fillRect(
+police.x-20,
+police.y,
+police.w,
+police.h
+);
 
-            player.translateZ(moveJoystick.y * 0.22); 
-            player.translateX(moveJoystick.x * 0.22);
+ctx.fillStyle="red";
 
-            yVelocity += gravity;
-            player.position.y += yVelocity;
+for(let o of obstacles){
+ctx.fillRect(
+lanes[o.lane]-25,
+o.y,
+o.w,
+o.h
+);
+}
 
-            blocks.forEach(b => {
-                if(Math.abs(player.position.x - b.position.x) < (b.w/2 + 0.6) && 
-                   Math.abs(player.position.z - b.position.z) < (b.d/2 + 0.6) && 
-                   player.position.y - 1.6 <= b.topY + 0.3 && 
-                   player.position.y - 1.6 > b.topY - 1.2 && yVelocity <= 0) { 
-                    player.position.y = b.topY + 1.6;
-                    yVelocity = 0;
-                    
-                    if(b.scoreCounted === undefined && b.position.z !== 0) {
-                        b.scoreCounted = true;
-                        score++;
-                        document.getElementById('score').innerText = score;
-                    }
-                }
-            });
+}
 
-            if (player.position.z < lastSpawnZ + 200) {
-                generateNextBuildings();
-            }
+function gameLoop(){
 
-            if(player.position.y < -15) {
-                player.position.set(0, 26, 0); 
-                yVelocity = 0;
-            }
+update();
+draw();
 
-            renderer.render(scene, camera);
-        }
+requestAnimationFrame(gameLoop);
 
-        function startGame() {
-            gameStarted = true;
-            document.getElementById('startScreen').style.display = 'none';
-            document.getElementById('ui').style.display = 'flex';
-            document.getElementById('joystickZone').style.display = 'block';
-            document.getElementById('jumpBtn').style.display = 'flex';
-            
-            menuCubes.forEach(c => {
-                c.trails.forEach(t => menuScene.remove(t));
-                menuScene.remove(c);
-            });
-            menuCubes = [];
-            
-            initGame();
-        }
+}
 
-        window.onload = initMenuAnimation;
-    </script>
+gameLoop();
+
+</script>
+
 </body>
-    </html>
-    
+</html>
