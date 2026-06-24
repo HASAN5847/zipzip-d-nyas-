@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZıpZıp Dünyası - FPS Sonsuz Şehir</title>
+    <title>ZıpZıp Dünyası - Gündüz Şehri</title>
     <style>
         html, body { 
             margin: 0; 
             overflow: hidden; 
-            background: #000; 
+            background: #87CEEB; /* Açık mavi gökyüzü */
             font-family: sans-serif; 
             color: #fff; 
             user-select: none; 
@@ -16,24 +16,25 @@
             width: 100%;
             height: 100%;
         }
-        #startScreen { position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center; }
-        #startScreen h1 { font-size: 65px; font-weight: 900; color: #2ed573; margin: 0; text-shadow: 0 0 25px rgba(46,213,115,0.9); letter-spacing: 5px; }
-        #startScreen p { font-size: 20px; color: #a4b0be; letter-spacing: 2px; margin-top: 10px; margin-bottom: 30px; }
-        .btn { padding: 20px 60px; font-size: 26px; background: #ff4757; border: none; color: white; border-radius: 40px; cursor: pointer; font-weight: bold; box-shadow: 0 8px 25px rgba(255,71,87,0.7); }
-        #ui { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 40px; z-index: 5; background: rgba(0,0,0,0.7); padding: 10px 30px; border-radius: 20px; pointer-events: none; display: none; border: 2px solid #2ed573; }
-        .stat { font-size: 24px; font-weight: bold; letter-spacing: 1px; color: #2ed573; text-shadow: 0 0 10px rgba(46,213,115,0.5); }
+        #startScreen { position: absolute; width: 100%; height: 100%; background: rgba(135,206,235,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center; }
+        #startScreen h1 { font-size: 65px; font-weight: 900; color: #fff; margin: 0; text-shadow: 0 4px 15px rgba(0,0,0,0.2); letter-spacing: 5px; }
+        #startScreen p { font-size: 20px; color: #333; letter-spacing: 2px; margin-top: 10px; margin-bottom: 30px; font-weight: bold; }
+        .btn { padding: 20px 60px; font-size: 26px; background: #ff4757; border: none; color: white; border-radius: 40px; cursor: pointer; font-weight: bold; box-shadow: 0 8px 25px rgba(255,71,87,0.5); }
         
-        /* DEVASA KONTROLLER */
-        #joystickZone { position: absolute; bottom: 40px; left: 40px; width: 220px; height: 220px; background: rgba(255,255,255,0.15); border: 4px solid rgba(255,255,255,0.5); border-radius: 50%; z-index: 8; display: none; touch-action: none; }
-        #joystick { position: absolute; width: 90px; height: 90px; background: rgba(255,255,255,0.8); border-radius: 50%; top: 65px; left: 65px; }
-        #jumpBtn { position: absolute; bottom: 40px; right: 40px; width: 180px; height: 180px; background: rgba(46,213,115,0.95); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 32px; z-index: 8; box-shadow: 0 8px 30px rgba(46,213,115,0.8); display: none; touch-action: none; -webkit-user-select: none; }
+        #ui { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 5; background: rgba(0,0,0,0.6); padding: 10px 35px; border-radius: 20px; pointer-events: none; display: none; border: 2px solid #fff; }
+        .stat { font-size: 26px; font-weight: bold; letter-spacing: 1px; color: #fff; }
+        
+        /* TUŞLARIN ARASI AÇILDI VE YERLERİ DÜZELTİLDİ */
+        #joystickZone { position: absolute; bottom: 50px; left: 40px; width: 180px; height: 180px; background: rgba(255,255,255,0.3); border: 4px solid #fff; border-radius: 50%; z-index: 8; display: none; touch-action: none; }
+        #joystick { position: absolute; width: 80px; height: 80px; background: #fff; border-radius: 50%; top: 50px; left: 50px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        #jumpBtn { position: absolute; bottom: 50px; right: 40px; width: 140px; height: 140px; background: #2ed573; border: 4px solid #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 28px; z-index: 8; box-shadow: 0 8px 20px rgba(0,0,0,0.3); display: none; touch-action: none; -webkit-user-select: none; color: white; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
     <div id="startScreen">
         <h1>ZIPZIP DÜNYASI</h1>
-        <p>SONSUZ ŞEHİR MODU (AYDINLIK)</p>
+        <p>GÜNDÜZ ŞEHRİ MODU</p>
         <button class="btn" onclick="startGame()">ŞEHRE GİR</button>
     </div>
     <div id="ui"><div class="stat">SKOR: <span id="score">0</span></div></div>
@@ -50,7 +51,6 @@
         let menuCubes = [], gameStarted = false;
         let menuScene, menuCamera;
 
-        // Yakınlaştırmayı tamamen engelleme
         document.addEventListener('touchstart', function (event) {
             if (event.touches.length > 1) {
                 event.preventDefault();
@@ -68,6 +68,7 @@
 
         function initMenuAnimation() {
             menuScene = new THREE.Scene();
+            menuScene.background = new THREE.Color(0x87CEEB);
             menuCamera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
             menuCamera.position.z = 15;
 
@@ -78,20 +79,17 @@
             const light = new THREE.DirectionalLight(0xffffff, 1.5);
             light.position.set(5, 5, 10);
             menuScene.add(light);
-            menuScene.add(new THREE.AmbientLight(0x112211));
 
             animateMenu();
         }
 
         function spawnMenuCube() {
-            if (gameStarted || menuCubes.length > 10) return;
-            const geo = new THREE.BoxGeometry(0.6, 0.6, 0.6);
-            const mat = new THREE.MeshPhongMaterial({ color: 0x2ed573, emissive: 0x10b981, shininess: 100 });
+            if (gameStarted || menuCubes.length > 8) return;
+            const geo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+            const mat = new THREE.MeshPhongMaterial({ color: 0xffffff });
             const cube = new THREE.Mesh(geo, mat);
             cube.position.set((Math.random() - 0.5) * 20, -8, (Math.random() - 0.5) * 10);
-            cube.speedY = 0.08 + Math.random() * 0.06;
-            cube.rotSpeed = (Math.random() - 0.5) * 0.05;
-            cube.trails = [];
+            cube.speedY = 0.05 + Math.random() * 0.05;
             menuScene.add(cube);
             menuCubes.push(cube);
         }
@@ -99,36 +97,11 @@
         function animateMenu() {
             if (gameStarted) return;
             requestAnimationFrame(animateMenu);
-
-            if (Math.random() < 0.1) spawnMenuCube();
-
+            if (Math.random() < 0.05) spawnMenuCube();
             for (let i = menuCubes.length - 1; i >= 0; i--) {
                 let c = menuCubes[i];
                 c.position.y += c.speedY;
-                c.rotation.x += c.rotSpeed;
-                c.rotation.y += c.rotSpeed;
-
-                if (Math.random() < 0.3) {
-                    const trailGeo = new THREE.BoxGeometry(c.scale.x * 0.5, c.scale.y * 0.5, c.scale.z * 0.5);
-                    const trailMat = new THREE.MeshBasicMaterial({ color: 0x2ed573, transparent: true, opacity: 0.3 });
-                    const tMesh = new THREE.Mesh(trailGeo, trailMat);
-                    tMesh.position.copy(c.position);
-                    menuScene.add(tMesh);
-                    c.trails.push(tMesh);
-                }
-
-                for (let j = c.trails.length - 1; j >= 0; j--) {
-                    let t = c.trails[j];
-                    t.scale.multiplyScalar(0.92);
-                    t.material.opacity -= 0.03;
-                    if (t.material.opacity <= 0) {
-                        menuScene.remove(t);
-                        c.trails.splice(j, 1);
-                    }
-                }
-
                 if (c.position.y > 10) {
-                    c.trails.forEach(t => menuScene.remove(t));
                     menuScene.remove(c);
                     menuCubes.splice(i, 1);
                 }
@@ -138,31 +111,40 @@
 
         function initGame() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x060913); 
-            scene.fog = new THREE.FogExp2(0x060913, 0.01); 
+            scene.background = new THREE.Color(0x87CEEB); // Mavi Gökyüzü
+            scene.fog = new THREE.FogExp2(0x87CEEB, 0.008); 
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
 
-            const sunLight = new THREE.DirectionalLight(0xffffff, 2.0);
-            sunLight.position.set(30, 80, 40);
+            // Güneşli Parlak Aydınlatma
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1.6);
+            sunLight.position.set(40, 100, 20);
             scene.add(sunLight);
             
-            const ambientLight = new THREE.AmbientLight(0xffffff, 1.5); 
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1.0); 
             scene.add(ambientLight);
-
-            const hemisphereLight = new THREE.HemisphereLight(0x4444ff, 0x111111, 1.2);
-            scene.add(hemisphereLight);
 
             player = new THREE.Group();
             player.position.set(0, 26, 0); 
             scene.add(player);
             player.add(camera);
 
-            // Başlangıç binası - Tam üstünde başlıyoruz
-            createBuilding(0, 0, 0, 16, 50, 25, 0x4b5563, true); 
+            // GÜNEŞ EKLEME (Sarı Küre)
+            const sunGeo = new THREE.SphereGeometry(8, 32, 32);
+            const sunMat = new THREE.MeshBasicMaterial({ color: 0xFFD700 });
+            const sun = new THREE.Mesh(sunGeo, sunMat);
+            sun.position.set(30, 60, -100);
+            scene.add(sun);
+
+            // BULUTLARI ÜRETME
+            for(let i=0; i<15; i++) {
+                createCloud((Math.random() - 0.5) * 80, 40 + Math.random() * 15, -i * 30);
+            }
+
+            // Başlangıç binası (Gri Yapıldı)
+            createBuilding(0, 0, 0, 16, 50, 25, 0x7f8c8d); 
             lastSpawnZ = -15;
 
-            // Binaları hemen oyuncunun önüne yerleştiriyoruz ki şehir direkt görünsün
             for(let i=0; i<25; i++) {
                 generateNextBuildings();
             }
@@ -171,36 +153,48 @@
             animateGame();
         }
 
-        function createBuilding(x, y, z, w, h, d, color, isBase = false) {
+        function createCloud(x, y, z) {
+            const cloudGroup = new THREE.Group();
+            const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
+            
+            const numBlobs = 3 + Math.floor(Math.random() * 3);
+            for(let i=0; i<numBlobs; i++) {
+                const blobGeo = new THREE.SphereGeometry(3 + Math.random() * 2, 8, 8);
+                const blob = new THREE.Mesh(blobGeo, cloudMat);
+                blob.position.set(i * 3, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2);
+                cloudGroup.add(blob);
+            }
+            cloudGroup.position.set(x, y, z);
+            scene.add(cloudGroup);
+        }
+
+        function createBuilding(x, y, z, w, h, d, color) {
             const geo = new THREE.BoxGeometry(w, h, d);
             const mat = new THREE.MeshPhongMaterial({ 
                 color: color, 
-                shininess: 40,
-                flatShading: false
+                shininess: 20,
+                flatShading: true
             });
             const mesh = new THREE.Mesh(geo, mat);
             mesh.position.set(x, y, z);
             scene.add(mesh);
             blocks.push(mesh);
 
-            // Parlak Aydınlık Neon Pencereler
-            const windowGeo = new THREE.BoxGeometry(0.6, 1.0, 0.1); 
-            const neonColors = [0x00ff7f, 0xff007f, 0x00bfff, 0xffd700, 0xff00ff];
+            // Gerçekçi pencereler (Koyu Cam Tonları)
+            const windowGeo = new THREE.BoxGeometry(0.6, 1.2, 0.1); 
+            const windowMat = new THREE.MeshBasicMaterial({ color: 0x2c3e50 });
             
             for(let pz = z - d/2 + 2; pz < z + d/2 - 2; pz += 4) {
-                for(let py = y - h/2 + 6; py < y + h/2 - 4; py += 5) {
-                    if(Math.random() > 0.3) {
-                        const winColor = neonColors[Math.floor(Math.random() * neonColors.length)];
-                        const windowMat = new THREE.MeshBasicMaterial({ color: winColor });
-                        
+                for(let py = y - h/2 + 6; py < y + h/2 - 4; py += 6) {
+                    if(Math.random() > 0.2) {
                         const winRight = new THREE.Mesh(windowGeo, windowMat);
-                        winRight.position.set(x + w/2 + 0.08, py, pz);
+                        winRight.position.set(x + w/2 + 0.05, py, pz);
                         winRight.rotation.y = Math.PI / 2;
                         scene.add(winRight);
                         mesh.add(winRight);
 
                         const winLeft = new THREE.Mesh(windowGeo, windowMat);
-                        winLeft.position.set(x - w/2 - 0.08, py, pz);
+                        winLeft.position.set(x - w/2 - 0.05, py, pz);
                         winLeft.rotation.y = -Math.PI / 2;
                         scene.add(winLeft);
                         mesh.add(winLeft);
@@ -214,21 +208,21 @@
         }
 
         function generateNextBuildings() {
-            let zPos = lastSpawnZ - 22;
+            let zPos = lastSpawnZ - 24;
             let w = 10 + Math.random() * 6;
             let h = 40 + Math.random() * 30; 
             let d = 12 + Math.random() * 8;
-            let xPos = (Math.random() - 0.5) * 12; 
+            let xPos = (Math.random() - 0.5) * 14; 
             
-            const buildingColors = [0x64748b, 0x475569, 0x334155, 0x1e293b];
-            let color = buildingColors[Math.floor(Math.random() * buildingColors.length)];
+            // Çeşitli gri tonları
+            const grayTones = [0x95a5a6, 0x7f8c8d, 0xbdc3c7, 0x707a8a];
+            let color = grayTones[Math.floor(Math.random() * grayTones.length)];
 
-            // Ana bina yerleşimi
             createBuilding(xPos, h/2, zPos, w, h, d, color);
             
-            // Aralara basılabilecek parlak yeşil çatı yolları
-            if(Math.random() > 0.2) {
-                createBuilding((Math.random() - 0.5) * 6, 20, zPos - 4, 6, 40, 6, 0x00ff7f);
+            // Aralardaki basma platformları (Hafif koyu gri yapıldı uyum için)
+            if(Math.random() > 0.3) {
+                createBuilding((Math.random() - 0.5) * 6, 20, zPos - 5, 6, 40, 6, 0x555d6b);
             }
 
             lastSpawnZ = zPos;
@@ -250,15 +244,15 @@
                 if(!joyActive) return;
                 let dx = e.touches[0].clientX - joyStartX;
                 let dy = e.touches[0].clientY - joyStartY;
-                let dist = Math.min(Math.sqrt(dx*dx + dy*dy), 65);
+                let dist = Math.min(Math.sqrt(dx*dx + dy*dy), 50);
                 let angle = Math.atan2(dy, dx);
                 
                 let mx = Math.cos(angle) * dist;
                 let my = Math.sin(angle) * dist;
                 
                 joy.style.transform = `translate(${mx}px, ${my}px)`;
-                moveJoystick.x = mx / 65;
-                moveJoystick.y = my / 65;
+                moveJoystick.x = mx / 50;
+                moveJoystick.y = my / 50;
             }, { passive: false });
 
             jZone.addEventListener('touchend', e => {
@@ -268,11 +262,11 @@
                 moveJoystick = {x:0, y:0};
             });
 
-            // KESİN SINIRSIZ HAVADA ZIPLAMA MEKANİZMASI
+            // HAVADA SONSUZ ZIPLAMA
             const jBtn = document.getElementById('jumpBtn');
             jBtn.addEventListener('touchstart', e => {
                 e.preventDefault();
-                yVelocity = jumpForce; // Havada her basıldığında hızı yukarı doğru yeniler
+                yVelocity = jumpForce; 
             }, { passive: false });
 
             let touchStartX = 0, touchStartY = 0;
@@ -337,10 +331,7 @@
             document.getElementById('joystickZone').style.display = 'block';
             document.getElementById('jumpBtn').style.display = 'flex';
             
-            menuCubes.forEach(c => {
-                c.trails.forEach(t => menuScene.remove(t));
-                menuScene.remove(c);
-            });
+            menuCubes.forEach(c => menuScene.remove(c));
             menuCubes = [];
             
             initGame();
@@ -349,4 +340,5 @@
         window.onload = initMenuAnimation;
     </script>
 </body>
-</html>
+    </html>
+    
