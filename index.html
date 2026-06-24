@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZıpZıp Dünyası - Gündüz Şehri</title>
+    <title>ZipZip Dunyasi - Gunduz Sehri</title>
     <style>
         html, body { 
             margin: 0; 
             overflow: hidden; 
-            background: #87CEEB; 
+            background: #87CEEB; /* Acik mavi gokyuzu */
             font-family: sans-serif; 
             color: #fff; 
             user-select: none; 
@@ -17,25 +17,25 @@
             height: 100%;
         }
         #startScreen { position: absolute; width: 100%; height: 100%; background: #87CEEB; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center; }
-        #startScreen h1 { font-size: 55px; font-weight: 900; color: #fff; margin: 0; text-shadow: 0 4px 10px rgba(0,0,0,0.15); letter-spacing: 3px; }
-        #startScreen p { font-size: 18px; color: #fff; letter-spacing: 1px; margin-top: 10px; margin-bottom: 30px; font-weight: bold; }
+        #startScreen h1 { font-size: 50px; font-weight: 900; color: #fff; margin: 0; text-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+        #startScreen p { font-size: 18px; color: #fff; margin-top: 10px; margin-bottom: 30px; font-weight: bold; }
         .btn { padding: 18px 50px; font-size: 24px; background: #ff4757; border: none; color: white; border-radius: 40px; cursor: pointer; font-weight: bold; box-shadow: 0 6px 20px rgba(255,71,87,0.4); }
         
         #ui { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 5; background: rgba(0,0,0,0.5); padding: 8px 25px; border-radius: 15px; pointer-events: none; display: none; }
         .stat { font-size: 22px; font-weight: bold; color: #fff; }
         
-        /* BUTONLARIN ARASI TAMAMEN AÇILDI - ASLA ÜST ÜSTE BİNMEZ */
-        #joystickZone { position: absolute; bottom: 50px; left: 30px; width: 160px; height: 160px; background: rgba(255,255,255,0.25); border: 4px solid #fff; border-radius: 50%; z-index: 8; display: none; touch-action: none; }
-        #joystick { position: absolute; width: 70px; height: 70px; background: #fff; border-radius: 50%; top: 41px; left: 41px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
-        #jumpBtn { position: absolute; bottom: 50px; right: 30px; width: 130px; height: 130px; background: #2ed573; border: 4px solid #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 24px; z-index: 8; box-shadow: 0 6px 15px rgba(0,0,0,0.2); display: none; touch-action: none; -webkit-user-select: none; color: white; }
+        /* TUSLARIN ARASI TAMAMEN ACILDI */
+        #joystickZone { position: absolute; bottom: 50px; left: 30px; width: 150px; height: 150px; background: rgba(255,255,255,0.25); border: 4px solid #fff; border-radius: 50%; z-index: 8; display: none; touch-action: none; }
+        #joystick { position: absolute; width: 60px; height: 60px; background: #fff; border-radius: 50%; top: 41px; left: 41px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        #jumpBtn { position: absolute; bottom: 50px; right: 30px; width: 120px; height: 120px; background: #2ed573; border: 4px solid #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 22px; z-index: 8; box-shadow: 0 6px 15px rgba(0,0,0,0.2); display: none; touch-action: none; -webkit-user-select: none; color: white; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
     <div id="startScreen">
-        <h1>ZIPZIP DÜNYASI</h1>
-        <p>GÜNDÜZ ŞEHRİ MODU</p>
-        <button class="btn" onclick="startGame()">ŞEHRE GİR</button>
+        <h1>ZIPZIP DUNYASI</h1>
+        <p>GUNDUZ SEHRI MODU</p>
+        <button class="btn" onclick="startGame()">SEHRE GIR</button>
     </div>
     <div id="ui"><div class="stat">SKOR: <span id="score">0</span></div></div>
     <div id="joystickZone"><div id="joystick"></div></div>
@@ -48,12 +48,11 @@
         let joyStartX = 0, joyStartY = 0, joyActive = false;
         let gameStarted = false;
 
-        // Çift dokunma yakınlaştırma engeli
         document.addEventListener('touchstart', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 
         function initGame() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87CEEB); // Mavi Arka Plan
+            scene.background = new THREE.Color(0x87CEEB); 
             scene.fog = new THREE.FogExp2(0x87CEEB, 0.007); 
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
@@ -68,7 +67,7 @@
             scene.add(player);
             player.add(camera);
 
-            // PARLAK GÜNEŞ
+            // GUNEŞ
             const sunGeo = new THREE.SphereGeometry(7, 32, 32);
             const sunMat = new THREE.MeshBasicMaterial({ color: 0xFFD700 });
             const sun = new THREE.Mesh(sunGeo, sunMat);
@@ -80,7 +79,7 @@
                 createCloud((Math.random() - 0.5) * 70, 38 + Math.random() * 12, -i * 28);
             }
 
-            // Başlangıç Platformu (Gri)
+            // Baslangic Platformu (Gri)
             createBuilding(0, 0, 0, 15, 50, 25, 0x7f8c8d); 
             lastSpawnZ = -15;
 
@@ -178,15 +177,15 @@
                 moveJoystick = {x:0, y:0};
             });
 
-            // Sınırsız Havada Zıplama
+            // SINIRSIZ HAVADA ZIPLAMA
             document.getElementById('jumpBtn').addEventListener('touchstart', e => {
                 e.preventDefault(); yVelocity = jumpForce; 
             }, { passive: false });
 
-            let touchStartX = 0, touchStartY = 0;
+            let touchStartX = 0;
             window.addEventListener('touchstart', e => {
                 if(e.target.id === 'joystickZone' || e.target.id === 'joystick' || e.target.id === 'jumpBtn') return;
-                touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY;
+                touchStartX = e.touches[0].clientX;
             });
             window.addEventListener('touchmove', e => {
                 if(e.target.id === 'joystickZone' || e.target.id === 'joystick' || e.target.id === 'jumpBtn') return;
@@ -236,4 +235,5 @@
         }
     </script>
 </body>
-</html>
+    </html>
+    
