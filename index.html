@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>ZıpZıp Dünyası - FPS Modu</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; user-select: none; font-family: sans-serif; }
+        
+        #girisEkrani {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(11, 15, 25, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            color: white;
+            transition: opacity 0.5s ease;
+        }
+        #girisEkrani h1 { font-size: 52px; margin-bottom: 10px; color: #2ecc71; text-shadow: 0 0 15px rgba(46,204,113,0.5); font-weight: bold; }
+        #girisEkrani p { font-size: 18px; color: #a0aec0; margin-bottom: 30px; letter-spacing: 1px; }
+        #baslaButon {
+            padding: 15px 40px;
+            font-size: 22px;
+            font-weight: bold;
+            color: white;
+            background: #3498db;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(52,152,219,0.4);
+            transition: transform 0.2s;
+            pointer-events: auto;
+        }
+        #baslaButon:hover { transform: scale(1.05); }
+
+        #arayuz {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            pointer-events: none;
+            display: none;
+        }
+        #skor { font-size: 36px; font-weight: bold; }
+        #sezonBilgi { font-size: 22px; color: #f1c40f; margin-top: 5px; font-weight: bold; }
+        #bolumBilgi { font-size: 16px; color: #bdc3c7; margin-top: 2px; }
+        
+        /* Ekranın ortasındaki hedef göstergesi (FPS Hissi İçin) */
+        #hedef {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 6px;
+            height: 6px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            pointer-events: none;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="girisEkrani">
+        <h1>ZIPZIP DÜNYASI</h1>
+        <p>Dünya • Uzay • Ay - Birinci Şahıs Gözünden</p>
+        <button id="baslaButon" onclick="oyunuBaslat()">MACERAYA BAŞLA</button>
+    </div>
+
+    <div id="arayuz">
+        <div id="skor">Blok: 0 / 90</div>
+        <div id="sezonBilgi">Sezon 1: Dünya</div>
+        <div id="bolumBilgi">Bölüm 1 (Blok 1-10)</div>
+    </div>
+    
+    <div id="hedef"></div>
+
+    <script>
+        let oyunBasladi = false;
+        let oyunBitti = false;
+
+        const scene = new THREE.Scene();
+        
+        // Birinci şahıs kamerası görüş açısını (FOV) 75 yaptık
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 15, 5);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+
+        // Görünmez Oyuncu Kutusu (Kamera bunun içinde olacak ama çarpışmaları hesaplamaya devam edecek)
+        const playerGeo = new THREE.BoxGeometry(1, 1, 1);
+        const playerMat = new THREE.MeshBasicMaterial({ visible: false });
+        const player = new THREE.Mesh(playerGeo, playerMat);
+        player.position.set(-3, 0, 0);
+        scene.add(player);
+
+        const floorGeo = new THREE.PlaneGeometry(200, 200);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x27ae60, roughness: 0.9 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -4;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        let yercekimi = -0.005;
+        let dikeyHiz = 0;
+        let gecilenBlok = 0;
+        let sayac = 0;
+        const engeller = [];
+
+        function atmosferiGuncelle(blok) {
+            let guncelRenk = 0x7f8c8d;
+            let sezon = 1;
+            let bolum = 1;
+
+            if (blok <= 30) {
+                sezon = 1;
+                bolum = Math.ceil(blok / 10) || 1;
+                scene.background = new THREE.Color(0x5ca4ea);
+                scene.fog = new THREE.FogExp2(0x5ca4ea, 0.015);
+                floorMat.color.setHex(0x27ae60);
+                yercekimi = -0.005;
+                document.getElementById('sezonBilgi').innerText = "Sezon 1: Dünya";
+                document.getElementById('sezonBilgi').style.color = "#2ecc71";
+                guncelRenk = bolum === 1 ? 0x8e8e8e : (bolum === 2 ? 0xd35400 : 0xa0522d); 
+            } else if (blok <= 60) {
+                sezon = 2;
+                let lokalBlok = blok - 30;
+                bolum = Math.ceil(lokalBlok / 10) || 1;
+                scene.background = new THREE.Color(0x0a051b);
+                scene.fog = new THREE.FogExp2(0x25103f, 0.03);
+                floorMat.color.setHex(0x11052c);
+                yercekimi = -0.005;
+                document.getElementById('sezonBilgi').innerText = "Sezon 2: Uzay";
+                document.getElementById('sezonBilgi').style.color = "#9b59b6";
+                guncelRenk = bolum === 1 ? 0x00ffcc : (bolum === 2 ? 0xff007f : 0x3498db);
+            } else {
+                sezon = 3;
+                let lokalBlok = blok - 60;
+                bolum = Math.ceil(lokalBlok / 10) || 1;
+                scene.background = new THREE.Color(0x050508);
+                scene.fog = new THREE.FogExp2(0x1c1c24, 0.02);
+                floorMat.color.setHex(0x3a3a45);
+                yercekimi = -0.003; // Ay yerçekimi etkisi
+                document.getElementById('sezonBilgi').innerText = "Sezon 3: Ay";
+                document.getElementById('sezonBilgi').style.color = "#bdc3c7";
+                guncelRenk = bolum === 1 ? 0x7f8c8d : (bolum === 2 ? 0x555555 : 0x222222);
+            }
+
+            let limitUst = bolum * 10 + (sezon - 1) * 30;
+            let limitAlt = limitUst - 9;
+            document.getElementById('bolumBilgi').innerText = "Bölüm " + bolum + " (Blok " + limitAlt + "-" + limitUst + ")";
+            return guncelRenk;
+        }
+
+        function engelOlustur() {
+            if (gecilenBlok >= 90) return;
+
+            const bosluk = 3.6; // FPS modunda geçişi rahatlatmak için boşluk hafifçe artırıldı
+            const yukseklik = Math.random() * 4 - 2;
+            const sonrakiBlokTahmini = Math.floor(gecilenBlok) + 1;
+            const dinamikRenk = atmosferiGuncelle(sonrakiBlokTahmini);
+            
+            const engelMaddesi = new THREE.MeshStandardMaterial({ color: dinamikRenk, roughness: 0.4, metalness: 0.3 });
+
+            // Kalınlık hissi için engellerin Z ekseni derinliğini 4 yaptık (Tünel gibi görünmesi için)
+            const ustGeo = new THREE.BoxGeometry(1.2, 8, 4);
+            const ustEngel = new THREE.Mesh(ustGeo, engelMaddesi);
+            ustEngel.position.set(12, yukseklik + 4 + bosluk / 2, 0);
+            ustEngel.castShadow = true;
+            scene.add(ustEngel);
+            engeller.push(ustEngel);
+
+            const altGeo = new THREE.BoxGeometry(1.2, 8, 4);
+            const altEngel = new THREE.Mesh(altGeo, engelMaddesi);
+            altEngel.position.set(12, yukseklik - 4 - bosluk / 2, 0);
+            altEngel.castShadow = true;
+            scene.add(altEngel);
+            engeller.push(altEngel);
+        }
+
+        function zipla() {
+            if (oyunBasladi && !oyunBitti) {
+                dikeyHiz = gecilenBlok > 60 ? 0.09 : 0.12;
+                // Zıplarken kamerayı hafifçe yukarı eğer (Gerçekçi baş hareketi)
+                camera.rotation.z = 0.05;
+            }
+        }
+
+        window.addEventListener('keydown', (e) => { if (e.code === 'Space') zipla(); });
+        window.addEventListener('mousedown', zipla);
+        window.addEventListener('touchstart', zipla);
+
+        function oyunuBaslat() {
+            document.getElementById('girisEkrani').style.opacity = 0;
+            setTimeout(() => {
+                document.getElementById('girisEkrani').style.display = 'none';
+                document.getElementById('arayuz').style.display = 'flex';
+                document.getElementById('hedef').style.display = 'block';
+                oyunBasladi = true;
+                engelOlustur();
+            }, 500);
+        }
+
+        atmosferiGuncelle(1);
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (oyunBasladi && !oyunBitti) {
+                dikeyHiz += yercekimi;
+                player.position.y += dikeyHiz;
+
+                // KAMERA KARAKTERİN GÖZÜ OLUYOR
+                // Kamera pozisyonunu tam olarak oyuncu küpünün koordinatlarına eşitliyoruz
+                camera.position.set(player.position.x, player.position.y, player.position.z);
+                
+                // Baş hareketinin yavaşça eski düzlüğüne gelmesi
+                camera.rotation.z = THREE.MathUtils.lerp(camera.rotation.z, 0, 0.1);
+                // İleriye (engellere doğru) bakış yönü sabitlemesi
+                camera.lookAt(player.position.x + 5, player.position.y, 0);
+
+                sayac++;
+                if (sayac % 90 === 0) {
+                    engelOlustur();
+                }
+
+                if (gecilenBlok >= 90 && engeller.length === 0) {
+                    oyunBitti = true;
+                    alert('MUHTEŞEM ZıpZıp Dünyası kahramanı oldun Oyunu bitirdin');
+                    window.location.reload();
+                    return;
+                }
+
+                for (let i = engeller.length - 1; i >= 0; i--) {
+                    const engel = engeller[i];
+                    let hiz = 0.07 + (gecilenBlok * 0.0004); // Görüş açısı sebebiyle hız hissi dengelendi
+                    engel.position.x -= hiz;
+
+                    const oyuncuKutu = new THREE.Box3().setFromObject(player);
+                    const engelKutu = new THREE.Box3().setFromObject(engel);
+
+                    if (oyuncuKutu.intersectsBox(engelKutu) || player.position.y < -3.5 || player.position.y > 5.5) {
+                        oyunBitti = true;
+                        alert('ZıpZıp Dünyasında Elendin Skorun ' + Math.floor(gecilenBlok) + ' / 90');
+                        window.location.reload();
+                    }
+
+                    if (engel.position.x < player.position.x && !engel.gechildi) {
+                        engel.gechildi = true;
+                        gecilenBlok += 0.5; 
+                        const tamSkor = Math.floor(gecilenBlok);
+                        document.getElementById('skor').innerText = "Blok: " + tamSkor + " / 90";
+                        atmosferiGuncelle(tamSkor === 0 ? 1 : tamSkor);
+                    }
+
+                    if (engel.position.x < -10) {
+                        scene.remove(engel);
+                        engeller.splice(i, 1);
+                    }
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+  </html>
+  
