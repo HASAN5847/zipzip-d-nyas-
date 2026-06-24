@@ -2,12 +2,13 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ZıpZıp Dünyası - FPS Sonsuz Şehir</title>
     <style>
         html, body { 
             margin: 0; 
             overflow: hidden; 
-            background: #000; /* Daha karanlık arka plan ışıkları patlatır */
+            background: #000; 
             font-family: sans-serif; 
             color: #fff; 
             user-select: none; 
@@ -15,16 +16,17 @@
             width: 100%;
             height: 100%;
         }
-        #startScreen { position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center; }
-        #startScreen h1 { font-size: 75px; font-weight: 900; color: #2ed573; margin: 0; text-shadow: 0 0 25px rgba(46,213,115,0.9); letter-spacing: 5px; }
+        #startScreen { position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center; }
+        #startScreen h1 { font-size: 65px; font-weight: 900; color: #2ed573; margin: 0; text-shadow: 0 0 25px rgba(46,213,115,0.9); letter-spacing: 5px; }
         #startScreen p { font-size: 20px; color: #a4b0be; letter-spacing: 2px; margin-top: 10px; margin-bottom: 30px; }
-        .btn { padding: 18px 50px; font-size: 24px; background: #ff4757; border: none; color: white; border-radius: 40px; cursor: pointer; font-weight: bold; box-shadow: 0 8px 25px rgba(255,71,87,0.7); }
+        .btn { padding: 20px 60px; font-size: 26px; background: #ff4757; border: none; color: white; border-radius: 40px; cursor: pointer; font-weight: bold; box-shadow: 0 8px 25px rgba(255,71,87,0.7); }
         #ui { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 40px; z-index: 5; background: rgba(0,0,0,0.7); padding: 10px 30px; border-radius: 20px; pointer-events: none; display: none; border: 2px solid #2ed573; }
         .stat { font-size: 24px; font-weight: bold; letter-spacing: 1px; color: #2ed573; text-shadow: 0 0 10px rgba(46,213,115,0.5); }
         
-        #joystickZone { position: absolute; bottom: 30px; left: 30px; width: 170px; height: 170px; background: rgba(255,255,255,0.1); border: 3px solid rgba(255,255,255,0.4); border-radius: 50%; z-index: 8; display: none; touch-action: none; }
-        #joystick { position: absolute; width: 70px; height: 70px; background: rgba(255,255,255,0.7); border-radius: 50%; top: 50px; left: 50px; }
-        #jumpBtn { position: absolute; bottom: 40px; right: 40px; width: 120px; height: 120px; background: rgba(46,213,115,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 24px; z-index: 8; box-shadow: 0 6px 20px rgba(46,213,115,0.7); display: none; touch-action: none; -webkit-user-select: none; }
+        /* DEVASA KONTROLLER */
+        #joystickZone { position: absolute; bottom: 40px; left: 40px; width: 220px; height: 220px; background: rgba(255,255,255,0.15); border: 4px solid rgba(255,255,255,0.5); border-radius: 50%; z-index: 8; display: none; touch-action: none; }
+        #joystick { position: absolute; width: 90px; height: 90px; background: rgba(255,255,255,0.8); border-radius: 50%; top: 65px; left: 65px; }
+        #jumpBtn { position: absolute; bottom: 40px; right: 40px; width: 180px; height: 180px; background: rgba(46,213,115,0.95); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 32px; z-index: 8; box-shadow: 0 8px 30px rgba(46,213,115,0.8); display: none; touch-action: none; -webkit-user-select: none; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -42,12 +44,13 @@
         let scene, camera, renderer, player, moveJoystick = {x:0, y:0}, yVelocity = 0;
         let blocks = [], score = 0, lastSpawnZ = 0;
         const gravity = -0.011; 
-        const jumpForce = 0.28; // Havada zıplama için biraz daha güçlü
+        const jumpForce = 0.32; 
         let joyStartX = 0, joyStartY = 0, joyActive = false;
         
         let menuCubes = [], gameStarted = false;
         let menuScene, menuCamera;
 
+        // Yakınlaştırmayı tamamen engelleme
         document.addEventListener('touchstart', function (event) {
             if (event.touches.length > 1) {
                 event.preventDefault();
@@ -81,7 +84,7 @@
         }
 
         function spawnMenuCube() {
-            if (gameStarted || menuCubes.length > 25) return;
+            if (gameStarted || menuCubes.length > 10) return;
             const geo = new THREE.BoxGeometry(0.6, 0.6, 0.6);
             const mat = new THREE.MeshPhongMaterial({ color: 0x2ed573, emissive: 0x10b981, shininess: 100 });
             const cube = new THREE.Mesh(geo, mat);
@@ -105,7 +108,7 @@
                 c.rotation.x += c.rotSpeed;
                 c.rotation.y += c.rotSpeed;
 
-                if (Math.random() < 0.4) {
+                if (Math.random() < 0.3) {
                     const trailGeo = new THREE.BoxGeometry(c.scale.x * 0.5, c.scale.y * 0.5, c.scale.z * 0.5);
                     const trailMat = new THREE.MeshBasicMaterial({ color: 0x2ed573, transparent: true, opacity: 0.3 });
                     const tMesh = new THREE.Mesh(trailGeo, trailMat);
@@ -117,7 +120,7 @@
                 for (let j = c.trails.length - 1; j >= 0; j--) {
                     let t = c.trails[j];
                     t.scale.multiplyScalar(0.92);
-                    t.material.opacity -= 0.02;
+                    t.material.opacity -= 0.03;
                     if (t.material.opacity <= 0) {
                         menuScene.remove(t);
                         c.trails.splice(j, 1);
@@ -135,35 +138,32 @@
 
         function initGame() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x0a0e17); // Hafif mavi-siyah gökyüzü
-            scene.fog = new THREE.FogExp2(0x0a0e17, 0.015); // Sis azaltıldı
+            scene.background = new THREE.Color(0x060913); 
+            scene.fog = new THREE.FogExp2(0x060913, 0.01); 
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
 
-            // Daha güçlü ve yaygın ana ışık
-            const sunLight = new THREE.DirectionalLight(0xffffff, 1.8);
-            sunLight.position.set(50, 100, 50);
+            const sunLight = new THREE.DirectionalLight(0xffffff, 2.0);
+            sunLight.position.set(30, 80, 40);
             scene.add(sunLight);
             
-            // Şehri aydınlatan ortam ışığı
-            const ambientLight = new THREE.AmbientLight(0x404040, 1.2); 
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1.5); 
             scene.add(ambientLight);
 
-            // Binaları alttan aydınlatan hafif mavi ışık
-            const groundLight = new THREE.HemisphereLight(0x333366, 0x000000, 0.8);
-            scene.add(groundLight);
+            const hemisphereLight = new THREE.HemisphereLight(0x4444ff, 0x111111, 1.2);
+            scene.add(hemisphereLight);
 
             player = new THREE.Group();
-            player.position.set(0, 15, 0); // Başlangıç yüksekliği
+            player.position.set(0, 26, 0); 
             scene.add(player);
             player.add(camera);
 
-            // Başlangıç caddesi (daha aydınlık renkler)
-            createBuilding(0, 0, 0, 12, 25, 30, 0x404b5a, true); // Zemin aydınlatıldı
+            // Başlangıç binası - Tam üstünde başlıyoruz
+            createBuilding(0, 0, 0, 16, 50, 25, 0x4b5563, true); 
             lastSpawnZ = -15;
 
-            // İlk binaları üret
-            for(let i=0; i<20; i++) {
+            // Binaları hemen oyuncunun önüne yerleştiriyoruz ki şehir direkt görünsün
+            for(let i=0; i<25; i++) {
                 generateNextBuildings();
             }
 
@@ -173,60 +173,39 @@
 
         function createBuilding(x, y, z, w, h, d, color, isBase = false) {
             const geo = new THREE.BoxGeometry(w, h, d);
-            // Daha parlak ve yansımalı materyal
             const mat = new THREE.MeshPhongMaterial({ 
                 color: color, 
-                shininess: 30,
-                flatShading: false, // Daha yumuşak gölgeler
-                emissive: isBase ? 0x111122 : 0x000000 // Başlangıç platformu hafif parlar
+                shininess: 40,
+                flatShading: false
             });
             const mesh = new THREE.Mesh(geo, mat);
             mesh.position.set(x, y, z);
             scene.add(mesh);
             blocks.push(mesh);
 
-            // Aydınlık pencereler (Neon Şehir Havası)
-            const windowGeo = new THREE.BoxGeometry(0.5, 0.8, 0.1); // Pencere boyutu
+            // Parlak Aydınlık Neon Pencereler
+            const windowGeo = new THREE.BoxGeometry(0.6, 1.0, 0.1); 
+            const neonColors = [0x00ff7f, 0xff007f, 0x00bfff, 0xffd700, 0xff00ff];
             
-            // Rastgele neon renkler
-            const neonColors = [0x2ed573, 0xff4757, 0x3498db, 0xf1c40f, 0xe056fd];
-            
-            // Binanın yan yüzeylerine pencereler ekle
-            for(let pz = z - d/2 + 2; pz < z + d/2 - 2; pz += 3) {
-                for(let py = y - h/2 + 5; py < y + h/2 - 3; py += 4) {
+            for(let pz = z - d/2 + 2; pz < z + d/2 - 2; pz += 4) {
+                for(let py = y - h/2 + 6; py < y + h/2 - 4; py += 5) {
                     if(Math.random() > 0.3) {
                         const winColor = neonColors[Math.floor(Math.random() * neonColors.length)];
-                        const windowMat = new THREE.MeshBasicMaterial({ 
-                            color: winColor,
-                            transparent: true,
-                            opacity: 0.9
-                        });
+                        const windowMat = new THREE.MeshBasicMaterial({ color: winColor });
                         
-                        // Sağ yüzey
                         const winRight = new THREE.Mesh(windowGeo, windowMat);
-                        winRight.position.set(x + w/2 + 0.06, py, pz);
+                        winRight.position.set(x + w/2 + 0.08, py, pz);
                         winRight.rotation.y = Math.PI / 2;
                         scene.add(winRight);
                         mesh.add(winRight);
 
-                        // Sol yüzey
                         const winLeft = new THREE.Mesh(windowGeo, windowMat);
-                        winLeft.position.set(x - w/2 - 0.06, py, pz);
+                        winLeft.position.set(x - w/2 - 0.08, py, pz);
                         winLeft.rotation.y = -Math.PI / 2;
                         scene.add(winLeft);
                         mesh.add(winLeft);
                     }
                 }
-            }
-
-            // Kapılar (Zemine yakın binalar için)
-            if (py < y - h/2 + 6 && Math.random() > 0.5) {
-                const doorGeo = new THREE.BoxGeometry(2, 3.5, 0.1);
-                const doorMat = new THREE.MeshBasicMaterial({ color: 0xffffff, emissive: 0xffffff });
-                const door = new THREE.Mesh(doorGeo, doorMat);
-                door.position.set(x, y - h/2 + 1.75, z + d/2 + 0.06); // Ön yüzey
-                scene.add(door);
-                mesh.add(door);
             }
 
             mesh.topY = y + h/2;
@@ -235,22 +214,21 @@
         }
 
         function generateNextBuildings() {
-            let zPos = lastSpawnZ - 20;
-            let w = 8 + Math.random() * 5;
-            let h = 30 + Math.random() * 35; // Daha yüksek binalar
-            let d = 10 + Math.random() * 8;
-            let xPos = (Math.random() - 0.5) * 16; // Daha geniş yayılım
+            let zPos = lastSpawnZ - 22;
+            let w = 10 + Math.random() * 6;
+            let h = 40 + Math.random() * 30; 
+            let d = 12 + Math.random() * 8;
+            let xPos = (Math.random() - 0.5) * 12; 
             
-            // Daha aydınlık bina renk tonları
-            const buildingColors = [0x57606f, 0x747d8c, 0x4b6584, 0xa5b1c2];
+            const buildingColors = [0x64748b, 0x475569, 0x334155, 0x1e293b];
             let color = buildingColors[Math.floor(Math.random() * buildingColors.length)];
 
-            createBuilding(xPos, h/2 - 5, zPos, w, h, d, color);
+            // Ana bina yerleşimi
+            createBuilding(xPos, h/2, zPos, w, h, d, color);
             
-            // Yeşil platformlar daha sık ve aydınlık
-            if(Math.random() > 0.3) {
-                const platColor = new THREE.Color(0x2ed573).multiplyScalar(1.5); // Daha parlak yeşil
-                createBuilding((Math.random() - 0.5) * 8, 10, zPos - 5, 5, 20, 5, platColor.getHex());
+            // Aralara basılabilecek parlak yeşil çatı yolları
+            if(Math.random() > 0.2) {
+                createBuilding((Math.random() - 0.5) * 6, 20, zPos - 4, 6, 40, 6, 0x00ff7f);
             }
 
             lastSpawnZ = zPos;
@@ -272,15 +250,15 @@
                 if(!joyActive) return;
                 let dx = e.touches[0].clientX - joyStartX;
                 let dy = e.touches[0].clientY - joyStartY;
-                let dist = Math.min(Math.sqrt(dx*dx + dy*dy), 50);
+                let dist = Math.min(Math.sqrt(dx*dx + dy*dy), 65);
                 let angle = Math.atan2(dy, dx);
                 
                 let mx = Math.cos(angle) * dist;
                 let my = Math.sin(angle) * dist;
                 
                 joy.style.transform = `translate(${mx}px, ${my}px)`;
-                moveJoystick.x = mx / 50;
-                moveJoystick.y = my / 50;
+                moveJoystick.x = mx / 65;
+                moveJoystick.y = my / 65;
             }, { passive: false });
 
             jZone.addEventListener('touchend', e => {
@@ -290,12 +268,11 @@
                 moveJoystick = {x:0, y:0};
             });
 
-            // GÜNCELLENMİŞ ZIPLAMA BUTONU (Sürekli Zıplama)
+            // KESİN SINIRSIZ HAVADA ZIPLAMA MEKANİZMASI
             const jBtn = document.getElementById('jumpBtn');
             jBtn.addEventListener('touchstart', e => {
                 e.preventDefault();
-                // isJumping kontrolü kaldırıldı -> Her dokunuşta zıplar
-                yVelocity = jumpForce; 
+                yVelocity = jumpForce; // Havada her basıldığında hızı yukarı doğru yeniler
             }, { passive: false });
 
             let touchStartX = 0, touchStartY = 0;
@@ -309,7 +286,7 @@
                 if(e.target.id === 'joystickZone' || e.target.id === 'joystick' || e.target.id === 'jumpBtn') return;
                 let dx = e.touches[0].clientX - touchStartX;
                 let dy = e.touches[0].clientY - touchStartY;
-                player.rotation.y -= dx * 0.005;
+                player.rotation.y -= dx * 0.006;
                 touchStartX = e.touches[0].clientX;
                 touchStartY = e.touches[0].clientY;
             });
@@ -319,17 +296,17 @@
             if (!gameStarted) return;
             requestAnimationFrame(animateGame);
 
-            player.translateZ(moveJoystick.y * 0.18); // Hareket hızı biraz artırıldı
-            player.translateX(moveJoystick.x * 0.18);
+            player.translateZ(moveJoystick.y * 0.22); 
+            player.translateX(moveJoystick.x * 0.22);
 
             yVelocity += gravity;
             player.position.y += yVelocity;
 
             blocks.forEach(b => {
-                if(Math.abs(player.position.x - b.position.x) < (b.w/2 + 0.5) && 
-                   Math.abs(player.position.z - b.position.z) < (b.d/2 + 0.5) && 
-                   player.position.y - 1.6 <= b.topY + 0.2 && 
-                   player.position.y - 1.6 > b.topY - 1.0 && yVelocity <= 0) { // Çarpışma toleransı artırıldı
+                if(Math.abs(player.position.x - b.position.x) < (b.w/2 + 0.6) && 
+                   Math.abs(player.position.z - b.position.z) < (b.d/2 + 0.6) && 
+                   player.position.y - 1.6 <= b.topY + 0.3 && 
+                   player.position.y - 1.6 > b.topY - 1.2 && yVelocity <= 0) { 
                     player.position.y = b.topY + 1.6;
                     yVelocity = 0;
                     
@@ -341,13 +318,12 @@
                 }
             });
 
-            if (player.position.z < lastSpawnZ + 180) {
+            if (player.position.z < lastSpawnZ + 200) {
                 generateNextBuildings();
             }
 
-            // Düştüğünde sıfırlanma yüksekliği ayarlandı
-            if(player.position.y < -10) {
-                player.position.set(0, 15, 0); // Başlangıç pozisyonuna dön
+            if(player.position.y < -15) {
+                player.position.set(0, 26, 0); 
                 yVelocity = 0;
             }
 
@@ -361,7 +337,10 @@
             document.getElementById('joystickZone').style.display = 'block';
             document.getElementById('jumpBtn').style.display = 'flex';
             
-            menuCubes.forEach(c => menuScene.remove(c));
+            menuCubes.forEach(c => {
+                c.trails.forEach(t => menuScene.remove(t));
+                menuScene.remove(c);
+            });
             menuCubes = [];
             
             initGame();
