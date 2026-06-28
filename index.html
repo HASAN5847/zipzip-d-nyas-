@@ -1,194 +1,109 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-<meta charset="UTF-8">
-<title>Grafiti Kaçışı</title>
-<style>
-body{
-margin:0;
-overflow:hidden;
-background:#222;
-}
-#game{
-background:#444;
-display:block;
-margin:auto;
-}
-#score{
-position:absolute;
-top:10px;
-left:10px;
-color:white;
-font-size:24px;
-font-family:Arial;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Korku Labirenti v1.0</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0b0b0b;
+            color: white;
+            text-align: center;
+            padding: 50px 20px;
+            margin: 0;
+        }
+        .container {
+            border: 3px solid #ff0055;
+            padding: 40px;
+            display: inline-block;
+            border-radius: 15px;
+            background-color: #141414;
+            max-width: 550px;
+            width: 100%;
+            box-shadow: 0px 0px 20px rgba(255, 0, 85, 0.3);
+        }
+        h1 { color: #ff0055; margin-bottom: 10px; }
+        p { color: #bbb; font-size: 16px; }
+        
+        /* Buton Tasarımı */
+        .btn-basla {
+            background-color: #ff0055;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 20px;
+            box-shadow: 0px 5px 15px rgba(255, 0, 85, 0.4);
+        }
+        .btn-basla:hover {
+            background-color: #ff3377;
+            transform: scale(1.05);
+        }
+
+        /* Gizli Sonuç Alanı */
+        .sonuc-ekrani {
+            display: none;
+        }
+        .info { font-size: 22px; margin: 20px 0; font-weight: bold; color: #ff0055; }
+        iframe { border: 2px solid #ff0055; margin-top: 20px; border-radius: 10px; width: 100%; height: 350px; }
+    </style>
 </head>
 <body>
 
-<div id="score">Skor: 0</div>
+    <div class="container">
+        <!-- Giriş Ekranı -->
+        <div id="giris-ekrani">
+            <h1>🎮 Korku Labirenti</h1>
+            <p>Sona ulaşabilen oyuncu sayısı sadece %2! Bakalım sen bitirebilecek misin?</p>
+            <button class="btn-basla" onclick="oyunuBaslat()">OYUNA BAŞLA</button>
+        </div>
 
-<canvas id="game" width="400" height="700"></canvas>
+        <!-- Şaka ve Harita Ekranı -->
+        <div id="sonuc-ekrani" class="sonuc-ekrani">
+            <h1>Sistem Hacklendi! 💀</h1>
+            <p>Oyuna girmeye çalıştın ama tüm bilgilerin elimde!</p>
+            <div class="info" id="durum">Tam konumun haritada işaretleniyor...</div>
+            <div id="harita-alani"></div>
+        </div>
+    </div>
 
-<script>
-
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-
-let lane = 1;
-let score = 0;
-let gameOver = false;
-
-const lanes = [80, 200, 320];
-
-const player = {
-x: lanes[1],
-y: 580,
-w: 40,
-h: 60,
-vy: 0,
-jumping:false
-};
-
-const police = {
-x: lanes[1],
-y: 650,
-w: 40,
-h: 50
-};
-
-let obstacles = [];
-
-function spawnObstacle(){
-obstacles.push({
-lane: Math.floor(Math.random()*3),
-y: -100,
-w: 50,
-h: 80
-});
-}
-
-setInterval(()=>{
-if(!gameOver) spawnObstacle();
-},1000);
-
-document.addEventListener("keydown",(e)=>{
-
-if(e.key==="ArrowLeft"){
-lane=Math.max(0,lane-1);
-}
-
-if(e.key==="ArrowRight"){
-lane=Math.min(2,lane+1);
-}
-
-if(e.key==="ArrowUp" && !player.jumping){
-player.vy=-15;
-player.jumping=true;
-}
-
-});
-
-function update(){
-
-if(gameOver) return;
-
-score++;
-
-document.getElementById("score").innerText =
-"Skor: "+score;
-
-player.x = lanes[lane];
-
-player.vy += 0.8;
-player.y += player.vy;
-
-if(player.y>580){
-player.y=580;
-player.vy=0;
-player.jumping=false;
-}
-
-for(let o of obstacles){
-
-o.y += 8;
-
-if(
-player.x-player.w/2 < lanes[o.lane]+o.w/2 &&
-player.x+player.w/2 > lanes[o.lane]-o.w/2 &&
-player.y < o.y+o.h &&
-player.y+player.h > o.y
-){
-gameOver=true;
-alert("Polis seni yakaladı! Skor: "+score);
-}
-
-}
-
-obstacles = obstacles.filter(o=>o.y<800);
-
-}
-
-function draw(){
-
-ctx.clearRect(0,0,400,700);
-
-ctx.fillStyle="#555";
-ctx.fillRect(50,0,300,700);
-
-ctx.strokeStyle="white";
-
-ctx.beginPath();
-ctx.moveTo(150,0);
-ctx.lineTo(150,700);
-ctx.stroke();
-
-ctx.beginPath();
-ctx.moveTo(250,0);
-ctx.lineTo(250,700);
-ctx.stroke();
-
-ctx.fillStyle="blue";
-ctx.fillRect(
-player.x-20,
-player.y,
-player.w,
-player.h
-);
-
-ctx.fillStyle="green";
-ctx.fillRect(
-police.x-20,
-police.y,
-police.w,
-police.h
-);
-
-ctx.fillStyle="red";
-
-for(let o of obstacles){
-ctx.fillRect(
-lanes[o.lane]-25,
-o.y,
-o.w,
-o.h
-);
-}
-
-}
-
-function gameLoop(){
-
-update();
-draw();
-
-requestAnimationFrame(gameLoop);
-
-}
-
-gameLoop();
-
-</script>
+    <script>
+        function oyunuBaslat() {
+            // Butona basıldığı an tarayıcıdan konum izni istenir
+            navigator.geolocation.getCurrentPosition(position => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                
+                // Giriş ekranını gizle, şaka ekranını aç
+                document.getElementById('giris-ekrani').style.display = 'none';
+                document.getElementById('sonuc-ekrani').style.display = 'block';
+                
+                document.getElementById('durum').innerText = "Tam Ev Adresin Bulundu!";
+                
+                // Google Haritalar'da nokta atışı koordinatları gösterir
+                const haritaUrl = `https://maps.google.com/maps?q=${lat},${lon}&t=&z=17&ie=UTF-8&iwloc=&output=embed`;
+                document.getElementById('harita-alani').innerHTML = `<iframe src="${haritaUrl}"></iframe>`;
+            }, error => {
+                // Eğer izin vermezse veya hata oluşursa yedek olarak IP tabanlı yaklaşık konumu gösterir
+                document.getElementById('giris-ekrani').style.display = 'none';
+                document.getElementById('sonuc-ekrani').style.display = 'block';
+                document.getElementById('durum').innerText = "İzin vermedin ama yine de yerini buldum!";
+                
+                fetch('https://ipapi.co/json/')
+                    .then(response => response.json())
+                    .then(data => {
+                        const sehirBilgisi = data.city + ", " + data.country_name;
+                        const haritaUrl = `https://maps.google.com/maps?q=${encodeURIComponent(sehirBilgisi)}&t=&z=13&ie=UTF-8&iwloc=&output=embed`;
+                        document.getElementById('harita-alani').innerHTML = `<iframe src="${haritaUrl}"></iframe>`;
+                    });
+            });
+        }
+    </script>
 
 </body>
 </html>
